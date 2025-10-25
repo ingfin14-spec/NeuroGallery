@@ -1,0 +1,246 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroGallery -- Admin</title>
+<style>
+:root{
+  --bg:#0b0e13; --card:#151a22; --text:#e5e9ec; --muted:#a8b0ba;
+  --accent:#00eaff; --gold:#ffd166; --border:rgba(0,234,255,.18);
+  --ok:#19d18a; --bad:#ff5c5c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
+header{max-width:1200px;margin:0 auto;padding:16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+h1{margin:0;color:var(--accent);text-shadow:0 0 10px var(--accent);font-size:1.2rem}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
+.tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+main{max-width:1200px;margin:0 auto 40px;padding:0 16px}
+.section{display:none}
+.section.active{display:block}
+.statbar{background:rgba(21,26,34,.9);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.stat{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.card img{width:100%;height:160px;object-fit:cover}
+.status-badge{position:absolute;top:8px;left:8px;padding:4px 8px;border-radius:6px;font-size:.75rem;font-weight:700}
+.status-badge.pending{background:var(--bad);color:#fff}
+.status-badge.approved{background:var(--ok);color:#000}
+.card .meta{padding:10px}
+.small{color:var(--muted);font-size:.9rem}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer}
+.btn.ok{background:rgba(25,209,138,.15);border-color:rgba(25,209,138,.35)}
+.btn.bad{background:rgba(255,92,92,.12);border-color:rgba(255,92,92,.35)}
+.btn.main{background:var(--accent);color:#000;border:none}
+.box{background:rgba(21,26,34,.9);border:1px solid var(--border);border-radius:12px;padding:12px}
+.list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.kv{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed rgba(255,255,255,.08);padding:6px 0}
+.mono{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;color:#9bd}
+footer{max-width:1200px;margin:20px auto 30px;color:#9aa4af;text-align:center}
+
+/* Login modal */
+#login{position:fixed;inset:0;background:radial-gradient(circle at center,rgba(0,0,20,.9),rgba(0,0,0,.95));display:flex;align-items:center;justify-content:center;z-index:50}
+.sheet{background:rgba(25,25,35,.95);border:1px solid var(--border);box-shadow:0 0 24px rgba(0,200,255,.25);border-radius:12px;padding:20px;width:92%;max-width:360px;text-align:center}
+.sheet h2{margin:0 0 8px;color:var(--gold)}
+.sheet input{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text)}
+.sheet .btn{width:100%}
+.note{color:var(--muted);font-size:.85rem;margin-top:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NeuroGallery -- Admin</h1>
+  <div class="tabs">
+    <button class="tab active" data-tab="uploads">Uploads</button>
+    <button class="tab" data-tab="analytics">Analytics</button>
+    <button class="tab" data-tab="users">Users</button>
+    <button id="logout" class="tab">Logout</button>
+  </div>
+</header>
+
+<main>
+  <section id="uploads" class="section active">
+    <div class="statbar">
+      <div id="statbar"></div>
+      <button id="approveAll" class="btn main">Approve All</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="analytics" class="section">
+    <div class="box">
+      <h3>Overview</h3>
+      <div class="list" id="anOverview"></div>
+    </div>
+  </section>
+
+  <section id="users" class="section">
+    <div class="box">
+      <h3>Contributors</h3>
+      <div class="list" id="userList"></div>
+    </div>
+  </section>
+</main>
+
+<footer>Offline Admin • Data in localStorage["neuro_items_v1"]</footer>
+
+<!-- Login -->
+<div id="login">
+  <div class="sheet">
+    <h2>Admin Login</h2>
+    <input type="password" id="pass" placeholder="Password" />
+    <button id="go" class="btn main">Enter</button>
+    <div id="msg" class="note"></div>
+    <p class="note">Default password: <span class="mono">admin123</span></p>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = "admin123";
+const LS_ITEMS = "neuro_items_v1";
+
+/* DOM */
+const tabs = document.querySelectorAll('.tab[data-tab]');
+const sections = document.querySelectorAll('.section');
+const grid = document.getElementById('grid');
+const statbar = document.getElementById('statbar');
+const anOverview = document.getElementById('anOverview');
+const usersBox = document.getElementById('userList');
+const approveAllBtn = document.getElementById('approveAll');
+
+/* Login */
+const loginWrap = document.getElementById('login');
+document.getElementById('go').onclick = ()=>{
+  const ok = document.getElementById('pass').value.trim() === ADMIN_PASSWORD;
+  const msg = document.getElementById('msg');
+  if(ok){ loginWrap.style.display='none'; boot(); }
+  else { msg.textContent = 'Access denied'; }
+};
+document.getElementById('logout').onclick = ()=>{ loginWrap.style.display='flex'; };
+
+/* Tabs */
+tabs.forEach(t=>{
+  t.addEventListener('click', ()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    sections.forEach(s=>s.classList.remove('active'));
+    document.getElementById(t.dataset.tab).classList.add('active');
+  });
+});
+
+/* Data */
+let items = JSON.parse(localStorage.getItem(LS_ITEMS) || '[]');
+
+/* Approve All */
+approveAllBtn.onclick = ()=>{
+  items.forEach(it=>it.status='approved');
+  localStorage.setItem(LS_ITEMS, JSON.stringify(items));
+  renderAll();
+  alert('All items approved!');
+};
+
+/* Render */
+function renderAll(){
+  renderStats();
+  renderGrid();
+  renderUsers();
+  renderAnalytics();
+}
+
+/* Stats */
+function renderStats(){
+  const total = items.length;
+  const pending = items.filter(it=>it.status==='pending').length;
+  const approved = items.filter(it=>it.status==='approved').length;
+  const byCat = items.reduce((m,it)=>((m[it.cat]= (m[it.cat]||0)+1),m),{});
+  statbar.innerHTML = `
+    <div class="stat">Total: <b>${total}</b></div>
+    <div class="stat">Approved: <b style="color:var(--ok)">${approved}</b></div>
+    <div class="stat">Pending: <b style="color:var(--bad)">${pending}</b></div>
+    ${Object.keys(byCat).map(c=>`<div class="stat">${c}: <b>${byCat[c]}</b></div>`).join('')}
+  `;
+}
+
+/* Grid */
+function renderGrid(){
+  grid.innerHTML='';
+  items.forEach((it,idx)=>{
+    const el=document.createElement('div');
+    el.className='card';
+    el.innerHTML=`
+      <span class="status-badge ${it.status==='pending'?'pending':'approved'}">${it.status}</span>
+      <img src="${it.src}" alt="">
+      <div class="meta">
+        <div style="font-weight:800">${it.title||'Untitled'}</div>
+        <div class="small">Cat: ${it.cat||'Unknown'}</div>
+        <div class="small" title="${it.prompt||''}">${(it.prompt||'').slice(0,90)}${(it.prompt||'').length>90?'…':''}</div>
+        <div class="row">
+          <button class="btn ok" onclick="toggleStatus(${idx})">Toggle</button>
+          <button class="btn bad" onclick="removeItem(${idx})">Delete</button>
+        </div>
+      </div>`;
+    grid.appendChild(el);
+  });
+}
+
+/* Actions */
+window.toggleStatus=(i)=>{
+  items[i].status = (items[i].status==='pending'?'approved':'pending');
+  localStorage.setItem(LS_ITEMS, JSON.stringify(items));
+  renderAll();
+};
+window.removeItem=(i)=>{
+  if(!confirm('Delete this image?'))return;
+  items.splice(i,1);
+  localStorage.setItem(LS_ITEMS, JSON.stringify(items));
+  renderAll();
+};
+
+/* Users */
+function renderUsers(){
+  usersBox.innerHTML='';
+  const map={};
+  items.forEach(it=>{
+    const a=it.author||'Guest';
+    map[a]=(map[a]||0)+1;
+  });
+  const keys=Object.keys(map);
+  if(!keys.length){usersBox.innerHTML='<div class="small">No user data.</div>';return;}
+  keys.sort((a,b)=>map[b]-map[a]).forEach(u=>{
+    const row=document.createElement('div');
+    row.className='kv';
+    row.innerHTML=`<span>${u}</span><span><b>${map[u]}</b> uploads</span>`;
+    usersBox.appendChild(row);
+  });
+}
+
+/* Analytics */
+function renderAnalytics(){
+  anOverview.innerHTML='';
+  const total=items.length;
+  const approved=items.filter(it=>it.status==='approved').length;
+  const pending=items.filter(it=>it.status==='pending').length;
+  const byCat=items.reduce((m,it)=>((m[it.cat]= (m[it.cat]||0)+1),m),{});
+  const box=document.createElement('div');
+  box.className='box';
+  box.innerHTML=`
+    <div class="kv"><span>Total</span><b>${total}</b></div>
+    <div class="kv"><span>Approved</span><b style="color:var(--ok)">${approved}</b></div>
+    <div class="kv"><span>Pending</span><b style="color:var(--bad)">${pending}</b></div>
+    ${Object.keys(byCat).map(c=>`<div class="kv"><span>${c}</span><b>${byCat[c]}</b></div>`).join('')}
+  `;
+  anOverview.appendChild(box);
+}
+
+/* Boot */
+function boot(){
+  items = JSON.parse(localStorage.getItem(LS_ITEMS) || '[]');
+  renderAll();
+}
+</script>
+</body>
+</html>

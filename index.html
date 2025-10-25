@@ -1,0 +1,219 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NeuroGallery -- AI Art</title>
+<style>
+:root{
+  --bg:#0b0e13; --card:#151a22; --text:#e5e9ec;
+  --muted:#a8b0ba; --accent:#00eaff; --gold:#ffd166; --border:rgba(0,234,255,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;}
+header{position:sticky;top:0;z-index:20;background:#10141a;border-bottom:1px solid var(--border);backdrop-filter:blur(6px)}
+.header-inner{max-width:1200px;margin:0 auto;padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{margin:0;font-size:1.25rem;color:var(--accent);text-shadow:0 0 10px var(--accent)}
+.badge{font-size:.7rem;color:#000;background:var(--gold);padding:3px 8px;border-radius:999px;font-weight:700}
+.controls{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap}
+button,select,input{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:8px;padding:8px 10px;font-weight:600;cursor:pointer}
+button:hover{background:rgba(0,234,255,.15)}
+#search{min-width:220px}
+.filters{max-width:1200px;margin:10px auto 0;padding:0 16px;display:flex;gap:8px;flex-wrap:wrap}
+.filter{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer}
+.filter.active{background:var(--accent);color:#000;border-color:var(--accent)}
+main{max-width:1200px;margin:18px auto;padding:0 16px 60px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 0 18px rgba(0,0,0,.35);display:flex;flex-direction:column}
+.thumb{width:100%;height:220px;object-fit:cover;display:block;cursor:pointer}
+.meta{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.title{font-weight:700}
+.small{color:var(--muted);font-size:.85rem}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1}
+footer{max-width:1200px;margin:0 auto 30px;color:#9aa4af;text-align:center;font-size:.9rem}
+#about{display:none;margin:16px auto 0;max-width:1000px;background:rgba(15,20,30,.9);
+  border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+#about h2{margin:0 0 6px;color:var(--gold)}
+#about p{margin:6px 0;color:var(--muted)}
+.viewer{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:50}
+.viewer-inner{max-width:92vw;max-height:90vh;display:grid;gap:10px}
+.viewer img{max-width:92vw;max-height:65vh;border-radius:12px;border:1px solid var(--border);box-shadow:0 0 24px rgba(0,0,0,.6)}
+.viewer .panel{background:rgba(21,26,34,.95);border:1px solid var(--border);border-radius:12px;padding:12px}
+.viewer .panel .top{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.viewer .title{font-weight:800}
+.viewer .prompt{color:var(--muted);font-size:.95rem;line-height:1.45;white-space:pre-wrap}
+.viewer .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.viewer .chip{border-radius:999px;padding:5px 10px;border:1px solid var(--border);background:rgba(255,255,255,.06)}
+.icon{background:rgba(255,255,255,.08);border:1px solid var(--border);width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:60}
+.sheet{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;max-width:520px;width:92%}
+.sheet h3{margin:0 0 8px;color:var(--gold)}
+.sheet .f{display:flex;flex-direction:column;gap:8px}
+.sheet input[type="text"], .sheet textarea, .sheet select {background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px}
+.sheet textarea{min-height:120px;resize:vertical}
+.copy-ok{color:#19d18a;font-weight:800}
+@media (max-width:560px){.thumb{height:180px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>NeuroGallery</h1>
+      <span class="badge">AI Art</span>
+    </div>
+    <div class="controls">
+      <input id="search" type="search" placeholder="Search title or prompt…" />
+      <button id="aboutBtn">About</button>
+      <button id="uploadBtn">Upload</button>
+      <button onclick="location.href='admin.html'">Admin</button>
+    </div>
+  </div>
+  <div class="filters" id="filters">
+    <button class="filter active" data-cat="All">All</button>
+    <button class="filter" data-cat="Sci-Fi">Sci-Fi</button>
+    <button class="filter" data-cat="Fantasy">Fantasy</button>
+    <button class="filter" data-cat="Cyberpunk">Cyberpunk</button>
+    <button class="filter" data-cat="Nature">Nature</button>
+    <button class="filter" data-cat="Abstract">Abstract</button>
+  </div>
+</header>
+
+<section id="about">
+  <h2>About NeuroGallery</h2>
+  <p>This gallery showcases images generated by AI (Midjourney, DALL·E, Stable Diffusion). Uploaded content may be pending admin approval before appearing here.</p>
+  <p><strong>Note:</strong> All images are AI-generated. Verify licenses before commercial use.</p>
+</section>
+
+<main>
+  <div id="grid" class="grid"></div>
+</main>
+
+<footer>© 2025 NeuroGallery -- AI-generated visual archive. Uploads appear after moderation.</footer>
+
+<div id="viewer" class="viewer">
+  <div class="viewer-inner">
+    <img id="vwImg" src="" alt="">
+    <div class="panel">
+      <div class="top">
+        <div class="title" id="vwTitle">Title</div>
+        <div class="row">
+          <button id="prevBtn" class="icon">◀</button>
+          <button id="nextBtn" class="icon">▶</button>
+          <button id="closeBtn" class="icon">✕</button>
+        </div>
+      </div>
+      <div class="row"><span class="chip" id="vwCat">Category</span></div>
+      <div class="prompt" id="vwPrompt"></div>
+      <div class="actions">
+        <button id="copyPrompt" class="btn">Copy Prompt</button>
+        <button id="downloadBtn" class="btn">Download</button>
+        <span id="copyState" class="small"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="uploadModal" class="modal">
+  <div class="sheet">
+    <h3>Upload AI Artwork</h3>
+    <div class="f">
+      <input type="file" id="upFile" accept="image/*" />
+      <input type="text" id="upTitle" placeholder="Title (e.g., Golden Knight on Mars)" />
+      <select id="upCat">
+        <option>Sci-Fi</option><option>Fantasy</option><option>Cyberpunk</option>
+        <option>Nature</option><option>Abstract</option>
+      </select>
+      <textarea id="upPrompt" placeholder="Prompt used to generate this image…"></textarea>
+      <div class="row">
+        <button id="upSave" class="btn">Save</button>
+        <button id="upCancel" class="btn">Cancel</button>
+      </div>
+      <span class="small">Uploads require admin approval before appearing on the site.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_KEY='neuro_items_v1';
+let items = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+
+function filtered(){
+  const q=(search.value||'').toLowerCase();
+  return items.filter(it=>it.status==='approved' && (currentFilter==='All'||it.cat===currentFilter)
+    && (!q || it.title.toLowerCase().includes(q) || (it.prompt||'').toLowerCase().includes(q)));
+}
+
+const grid=document.getElementById('grid');
+const filters=document.getElementById('filters');
+const search=document.getElementById('search');
+const about=document.getElementById('about');
+const aboutBtn=document.getElementById('aboutBtn');
+const uploadBtn=document.getElementById('uploadBtn');
+const upModal=document.getElementById('uploadModal');
+const upFile=document.getElementById('upFile');
+const upTitle=document.getElementById('upTitle');
+const upCat=document.getElementById('upCat');
+const upPrompt=document.getElementById('upPrompt');
+const upSave=document.getElementById('upSave');
+const upCancel=document.getElementById('upCancel');
+
+let currentFilter='All',currentIndex=0,currentViewList=[];
+
+function render(){
+  const list=filtered();
+  currentViewList=list;
+  grid.innerHTML='';
+  list.forEach((it,idx)=>{
+    const c=document.createElement('div');
+    c.className='card';
+    c.innerHTML=`
+    <img class="thumb" src="${it.src}" alt="${it.title}" onclick="openViewer(${idx})">
+    <div class="meta">
+      <div class="title">${it.title}</div>
+      <div class="small">Cat: ${it.cat}</div>
+      <div class="small">Prompt: ${(it.prompt||'').slice(0,80)}${(it.prompt||'').length>80?'…':''}</div>
+      <div class="row"><button class="btn" onclick="openViewer(${idx})">View</button><button class="btn" onclick="downloadItem(${idx})">Download</button></div>
+    </div>`;
+    grid.appendChild(c);
+  });
+}
+
+filters.addEventListener('click',e=>{
+  const b=e.target.closest('.filter');if(!b)return;
+  document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');currentFilter=b.dataset.cat;render();
+});
+search.oninput=()=>render();
+aboutBtn.onclick=()=>{about.style.display=(about.style.display==='block'?'none':'block');if(about.style.display==='block')about.scrollIntoView({behavior:'smooth'})};
+
+const viewer=document.getElementById('viewer'),vwImg=document.getElementById('vwImg'),vwTitle=document.getElementById('vwTitle'),vwCat=document.getElementById('vwCat'),vwPrompt=document.getElementById('vwPrompt'),copyState=document.getElementById('copyState');
+function openViewer(i){currentIndex=i;const it=currentViewList[i];vwImg.src=it.src;vwTitle.textContent=it.title;vwCat.textContent=it.cat;vwPrompt.textContent=it.prompt||'';viewer.style.display='flex';}
+document.getElementById('closeBtn').onclick=()=>viewer.style.display='none';
+document.getElementById('prevBtn').onclick=()=>{currentIndex=(currentIndex-1+currentViewList.length)%currentViewList.length;openViewer(currentIndex);}
+document.getElementById('nextBtn').onclick=()=>{currentIndex=(currentIndex+1)%currentViewList.length;openViewer(currentIndex);}
+document.getElementById('copyPrompt').onclick=async()=>{try{await navigator.clipboard.writeText(vwPrompt.textContent);copyState.textContent='Copied ✓';}catch{copyState.textContent='Copy failed';}};
+document.getElementById('downloadBtn').onclick=()=>{const it=currentViewList[currentIndex];const a=document.createElement('a');a.href=it.src;a.download=(it.title||'image')+'.png';a.click();};
+
+uploadBtn.onclick=()=>upModal.style.display='flex';
+upCancel.onclick=()=>upModal.style.display='none';
+upSave.onclick=()=>{
+  const f=upFile.files[0];if(!f)return alert('Select an image first!');
+  const r=new FileReader();
+  r.onload=e=>{
+    const obj={title:upTitle.value||f.name,cat:upCat.value,prompt:upPrompt.value||'',src:e.target.result,author:'Guest',status:'pending'};
+    items.push(obj);localStorage.setItem(LS_KEY,JSON.stringify(items));
+    upModal.style.display='none';alert('Uploaded! Pending admin approval.');
+  };
+  r.readAsDataURL(f);
+};
+
+render();
+window.openViewer=openViewer;
+window.downloadItem=i=>{const it=currentViewList[i];const a=document.createElement('a');a.href=it.src;a.download=(it.title||'image')+'.png';a.click();};
+</script>
+</body>
+</html>

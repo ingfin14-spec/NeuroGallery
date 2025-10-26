@@ -1,154 +1,86 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NeuroGallery</title>
-  <style>
-    body {
-      margin: 0;
-      background: #0d0f13;
-      color: #f2f2f2;
-      font-family: "Inter", sans-serif;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 20px;
-      background: rgba(10, 11, 15, 0.95);
-      position: sticky;
-      top: 0;
-      backdrop-filter: blur(10px);
-      z-index: 10;
-    }
-    .logo { color: #00eaff; font-weight: 700; font-size: 1.4em; }
-    nav a, nav button {
-      color: #00eaff;
-      background: none;
-      border: none;
-      font-size: 1em;
-      font-weight: 600;
-      margin-left: 15px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    nav a:hover, nav button:hover { color: #ffd166; }
-
-    main { padding: 20px; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
-    .card {
-      background: #181a20;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-      transition: transform 0.3s;
-    }
-    .card:hover { transform: scale(1.02); }
-    .card img { width: 100%; display: block; }
-    footer {
-      text-align: center;
-      padding: 30px 10px;
-      font-size: 0.9em;
-      color: #ccc;
-    }
-    .btn {
-      background: #00eaff;
-      border: none;
-      color: #000;
-      padding: 8px 15px;
-      font-weight: 600;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .btn:hover { background: #ffd166; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NeuroGallery</title>
+<style>
+body{margin:0;background:#0d0f13;color:#f2f2f2;font-family:Inter,Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:rgba(10,11,15,.95);position:sticky;top:0;z-index:10}
+.logo{color:#00eaff;font-weight:700;font-size:1.4em}
+nav a,nav button{color:#00eaff;background:none;border:none;font-size:1em;font-weight:600;margin-left:15px;cursor:pointer;transition:.3s}
+nav a:hover,nav button:hover{color:#ffd166}
+main{padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.card{background:#181a20;border-radius:10px;overflow:hidden;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+.card img{width:100%;display:block}
+.btn{background:#00eaff;border:none;color:#000;padding:8px 15px;font-weight:600;border-radius:6px;cursor:pointer}
+footer{text-align:center;padding:30px 10px;font-size:.9em;color:#ccc}
+</style>
 </head>
 <body>
+<header>
+  <div class="logo">NeuroGallery</div>
+  <nav>
+    <a href="#" id="aboutBtn">About</a>
+    <button id="uploadBtn">Upload</button>
+    <button id="loginBtn">Login with Google</button>
+    <a href="admin.html">Admin</a>
+  </nav>
+</header>
+<main>
+  <h2>Newest Uploads</h2>
+  <div id="gallery" class="grid"></div>
+</main>
+<footer>
+  All images are AI-generated. Free for personal use.<br>© NeuroGallery
+</footer>
 
-  <header>
-    <div class="logo">NeuroGallery</div>
-    <nav>
-      <a href="#" id="aboutBtn">About</a>
-      <button id="uploadBtn">Upload</button>
-      <button id="loginBtn">Login with Google</button>
-      <a href="admin.html" target="_blank">Admin</a>
-    </nav>
-  </header>
+<script type="module">
+import { db, storage, auth, provider } from './firebase-config.js';
+import { getDocs, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+import { signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-  <main>
-    <h2>Newest Uploads</h2>
-    <div id="gallery" class="grid"></div>
-  </main>
+const gallery=document.getElementById('gallery');
 
-  <footer>
-    All images are AI-generated. Free for personal use.<br>
-    © NeuroGallery
-  </footer>
-
-  <script type="module">
-    import { db, storage, auth, provider } from './firebase-config.js';
-    import { getDocs, collection, addDoc, serverTimestamp } 
-      from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    import { ref, uploadBytes, getDownloadURL } 
-      from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
-    import { signInWithPopup } 
-      from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-
-    const gallery = document.getElementById('gallery');
-
-    async function loadImages() {
-      gallery.innerHTML = "<p>Loading...</p>";
-      const snapshot = await getDocs(collection(db, "images"));
-      gallery.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.status === "approved") {
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `<img src="${data.url}" alt="${data.title}">
-                           <p>${data.title || "Untitled"}</p>`;
-          gallery.appendChild(div);
-        }
-      });
+async function loadImages(){
+  gallery.innerHTML="<p>Loading...</p>";
+  const snap=await getDocs(collection(db,"images"));
+  gallery.innerHTML="";
+  snap.forEach(doc=>{
+    const data=doc.data();
+    if(data.status==="approved"){
+      const div=document.createElement("div");
+      div.className="card";
+      div.innerHTML=`<img src="${data.url}" alt="${data.title}">
+                     <p>${data.title||"Untitled"}</p>`;
+      gallery.appendChild(div);
     }
-    loadImages();
+  });
+}
+loadImages();
 
-    document.getElementById("loginBtn").onclick = async () => {
-      try {
-        await signInWithPopup(auth, provider);
-        alert("✅ Logged in successfully!");
-      } catch (e) {
-        alert("Login failed: " + e.message);
-      }
-    };
+document.getElementById("loginBtn").onclick=async()=>{
+  try{await signInWithPopup(auth,provider);alert("✅ Logged in successfully!");}
+  catch(e){alert("Login failed: "+e.message);}
+};
 
-    document.getElementById("uploadBtn").onclick = async () => {
-      const fileInput = document.createElement("input");
-      fileInput.type = "file";
-      fileInput.accept = "image/*";
-      fileInput.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const storageRef = ref(storage, 'uploads/' + file.name);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        await addDoc(collection(db, "images"), {
-          title: file.name,
-          url,
-          status: "pending",
-          createdAt: serverTimestamp()
-        });
-        alert("✅ Uploaded (pending approval).");
-      };
-      fileInput.click();
-    };
-  </script>
+document.getElementById("uploadBtn").onclick=async()=>{
+  const f=document.createElement("input");
+  f.type="file";f.accept="image/*";
+  f.onchange=async(e)=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const sRef=ref(storage,'uploads/'+file.name);
+    await uploadBytes(sRef,file);
+    const url=await getDownloadURL(sRef);
+    await addDoc(collection(db,"images"),{title:file.name,url,status:"pending",createdAt:serverTimestamp()});
+    alert("✅ Uploaded (pending approval).");
+  };
+  f.click();
+};
+</script>
 </body>
 </html><script>// ==========================
 // 🔥 Firebase Config for NeuroGallery
@@ -181,239 +113,4 @@ export const storage = getStorage(app);
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 
-console.log("✅ Firebase initialized successfully");</script>ve("active");}
-function prev(){if(currentIndex>0)openModal(currentIndex-1);}
-function next(){if(currentIndex<images.length-1)openModal(currentIndex+1);}
-
-closeBtn.onclick=closeModal;
-prevBtn.onclick=prev;
-nextBtn.onclick=next;
-
-/* ---- Update views ---- */
-async function updateViews(id,views){
-  await updateDoc(doc(db,"images",id),{views:(views||0)+1});
-}
-
-/* ---- Download tracking ---- */
-downloadBtn.addEventListener("click",async ()=>{
-  const img=images[currentIndex];
-  await updateDoc(doc(db,"images",img.id),{downloads:(img.downloads||0)+1});
-});
-</script>
-
-</body>
-</html>      <button id="copyPrompt" class="btn">Copy Prompt</button>
-        <button id="downloadBtn" class="btn">Download</button>
-        <span id="copyState" class="small"></span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Upload Modal -->
-<div id="uploadModal" class="modal">
-  <div class="sheet">
-    <h3>Upload AI Artwork</h3>
-    <div class="f">
-      <input type="file" id="upFile" accept="image/*" />
-      <input type="text" id="upTitle" placeholder="Title (e.g., Golden Knight on Mars)" />
-      <select id="upCat">
-        <option>Sci-Fi</option><option>Fantasy</option><option>Cyberpunk</option>
-        <option>Nature</option><option>Abstract</option>
-      </select>
-      <textarea id="upPrompt" placeholder="Prompt used to generate this image…"></textarea>
-      <div class="row">
-        <button id="upSave" class="btn">Save</button>
-        <button id="upCancel" class="btn">Cancel</button>
-      </div>
-      <span class="small">Uploads require admin approval before appearing on the site.</span>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import {
-  app, auth, provider, signInWithPopup, signOut, onAuthStateChanged,
-  db, storage,
-  collection, addDoc, doc, query, where, orderBy, onSnapshot, updateDoc, deleteDoc, serverTimestamp,
-  ref, uploadBytes, getDownloadURL
-} from './firebase-config.js';
-
-/* ---------- UI refs ---------- */
-const grid = document.getElementById('grid');
-const filters = document.getElementById('filters');
-const search = document.getElementById('search');
-const aboutBtn = document.getElementById('aboutBtn');
-const about = document.getElementById('about');
-const signBtn = document.getElementById('signBtn');
-const uploadBtn = document.getElementById('uploadBtn');
-const upModal = document.getElementById('uploadModal');
-const upFile = document.getElementById('upFile');
-const upTitle = document.getElementById('upTitle');
-const upCat = document.getElementById('upCat');
-const upPrompt = document.getElementById('upPrompt');
-const upSave = document.getElementById('upSave');
-const upCancel = document.getElementById('upCancel');
-
-let currentFilter = 'All';
-let currentIndex = 0;
-let currentViewList = [];
-let unsubQuery = null;
-
-/* ---------- Auth ---------- */
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    signBtn.textContent = `Sign out (${user.displayName||user.email})`;
-    uploadBtn.classList.remove('hidden');
-  } else {
-    signBtn.textContent = 'Sign in with Google';
-    uploadBtn.classList.add('hidden');
-  }
-});
-signBtn.onclick = async () => {
-  if (auth.currentUser) { await signOut(auth); return; }
-  await signInWithPopup(auth, provider);
-};
-
-/* ---------- Query & Render ---------- */
-function startLiveQuery(){
-  if (unsubQuery) { unsubQuery(); unsubQuery = null; }
-  const q = query(
-    collection(db, 'images'),
-    where('status', '==', 'approved'),
-    orderBy('createdAt', 'desc')
-  );
-  unsubQuery = onSnapshot(q, (snap)=>{
-    const data = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-    renderList(data);
-  });
-}
-startLiveQuery();
-
-function renderList(items){
-  const term = (search.value||'').toLowerCase();
-  const filtered = items.filter(it=>{
-    const catOk = currentFilter==='All' || it.cat===currentFilter;
-    const qOk = !term || (it.title||'').toLowerCase().includes(term) || (it.prompt||'').toLowerCase().includes(term);
-    return catOk && qOk;
-  });
-  currentViewList = filtered;
-  grid.innerHTML = '';
-  filtered.forEach((it, idx)=>{
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <img class="thumb" src="${it.url}" alt="${it.title||''}" />
-      <div class="meta">
-        <div class="title">${it.title||'Untitled'}</div>
-        <div class="small">Cat: ${it.cat||'--'}</div>
-        <div class="small">Prompt: ${(it.prompt||'').slice(0,90)}${(it.prompt||'').length>90?'…':''}</div>
-        <div class="row">
-          <button class="btn view">View</button>
-          <button class="btn dl">Download</button>
-        </div>
-      </div>`;
-    const img = card.querySelector('.thumb');
-    img.addEventListener('click', ()=>openViewer(idx));
-    card.querySelector('.view').onclick = ()=>openViewer(idx);
-    card.querySelector('.dl').onclick = ()=>downloadItem(idx);
-    grid.appendChild(card);
-  });
-}
-
-/* ---------- Filters/Search/About ---------- */
-filters.addEventListener('click', (e)=>{
-  const b = e.target.closest('.filter'); if(!b) return;
-  document.querySelectorAll('.filter').forEach(el=>el.classList.remove('active'));
-  b.classList.add('active');
-  currentFilter = b.dataset.cat;
-  startLiveQuery();
-});
-search.oninput = ()=> startLiveQuery();
-aboutBtn.onclick = ()=>{
-  about.style.display = (about.style.display==='block') ? 'none' : 'block';
-  if(about.style.display==='block') about.scrollIntoView({behavior:'smooth', block:'start'});
-};
-
-/* ---------- Viewer ---------- */
-const viewer = document.getElementById('viewer');
-const vwImg = document.getElementById('vwImg');
-const vwTitle = document.getElementById('vwTitle');
-const vwCat = document.getElementById('vwCat');
-const vwPrompt = document.getElementById('vwPrompt');
-const copyState = document.getElementById('copyState');
-
-function openViewer(idx){
-  currentIndex = idx;
-  const it = currentViewList[idx];
-  vwImg.src = it.url;
-  vwTitle.textContent = it.title||'';
-  vwCat.textContent = it.cat||'';
-  vwPrompt.textContent = it.prompt||'';
-  copyState.textContent = '';
-  viewer.style.display = 'flex';
-}
-document.getElementById('closeBtn').onclick = ()=> viewer.style.display='none';
-document.getElementById('prevBtn').onclick = ()=> { currentIndex = (currentIndex-1+currentViewList.length)%currentViewList.length; openViewer(currentIndex); };
-document.getElementById('nextBtn').onclick = ()=> { currentIndex = (currentIndex+1)%currentViewList.length; openViewer(currentIndex); };
-document.getElementById('copyPrompt').onclick = async ()=>{
-  try{ await navigator.clipboard.writeText(vwPrompt.textContent); copyState.textContent='Copied ✓'; copyState.className='small copy-ok'; }
-  catch{ copyState.textContent='Copy failed'; copyState.className='small'; }
-};
-document.getElementById('downloadBtn').onclick = ()=>{
-  const it = currentViewList[currentIndex];
-  const a = document.createElement('a');
-  a.href = it.url;
-  a.download = (it.title||'image').replace(/\s+/g,'_') + '.png';
-  document.body.appendChild(a); a.click(); a.remove();
-};
-function downloadItem(idx){
-  const it = currentViewList[idx];
-  const a = document.createElement('a');
-  a.href = it.url;
-  a.download = (it.title||'image').replace(/\s+/g,'_') + '.png';
-  document.body.appendChild(a); a.click(); a.remove();
-}
-
-/* ---------- Upload flow (auth required) ---------- */
-uploadBtn.onclick = ()=>{
-  if(!auth.currentUser){ alert('Please sign in with Google to upload.'); return; }
-  upModal.style.display = 'flex';
-};
-upCancel.onclick = ()=> upModal.style.display='none';
-
-upSave.onclick = async ()=>{
-  try{
-    if(!auth.currentUser){ alert('Sign in first'); return; }
-    const file = upFile.files[0];
-    if(!file){ alert('Choose an image'); return; }
-    const title = upTitle.value.trim() || file.name;
-    const cat = upCat.value;
-    const prompt = upPrompt.value.trim() || '';
-
-    const ts = Date.now();
-    const path = `uploads/${auth.currentUser.uid}/${ts}_${file.name}`;
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-
-    await addDoc(collection(db, 'images'), {
-      title, cat, prompt,
-      url, storagePath: path,
-      uid: auth.currentUser.uid,
-      author: auth.currentUser.displayName || auth.currentUser.email || 'Unknown',
-      status: 'pending',
-      createdAt: serverTimestamp()
-    });
-
-    upModal.style.display='none';
-    upFile.value=''; upTitle.value=''; upPrompt.value='';
-    alert('Uploaded! Pending admin approval.');
-  }catch(err){
-    console.error(err);
-    alert('Upload failed: '+err.message);
-  }
-};
-</script>
-</body>
-</html>
+console.log("✅ Firebase initialized successfully");</script>

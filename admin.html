@@ -1,77 +1,55 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NeuroGallery -- Admin</title>
-  <style>
-    body { background: #0d0f13; color: #fff; font-family: Inter, sans-serif; margin: 0; padding: 20px; }
-    h1 { color: #00eaff; }
-    button { background: #00eaff; border: none; padding: 8px 15px; margin: 5px; cursor: pointer; border-radius: 6px; font-weight: 600; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-    .card { background: #1a1c20; border-radius: 10px; padding: 10px; text-align: center; }
-    .card img { width: 100%; border-radius: 8px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NeuroGallery -- Admin</title>
+<style>
+body{background:#0d0f13;color:#fff;font-family:Inter,Arial,sans-serif;margin:0;padding:20px}
+h1{color:#00eaff}
+button{background:#00eaff;border:none;padding:8px 15px;margin:5px;border-radius:6px;cursor:pointer;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.card{background:#1a1c20;border-radius:10px;padding:10px;text-align:center}
+.card img{width:100%;border-radius:8px}
+</style>
 </head>
 <body>
-
 <h1>NeuroGallery -- Admin</h1>
-<p>Sign in as admin: <button id="login">Sign in with Google</button></p>
+<p><button id="login">Sign in with Google</button></p>
 <div id="grid" class="grid"></div>
 
 <script type="module">
 import { db, auth, provider } from './firebase-config.js';
-import { getDocs, updateDoc, deleteDoc, doc, collection } 
-  from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-import { signInWithPopup } 
-  from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getDocs, updateDoc, deleteDoc, doc, collection } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-const ADMIN_EMAIL = "ingfin14@gmail.com";
-let isAdmin = false;
+const ADMIN_EMAIL="ingfin14@gmail.com";
+let isAdmin=false;
 
-document.getElementById("login").onclick = async () => {
-  const res = await signInWithPopup(auth, provider);
-  const user = res.user.email;
-  if (user === ADMIN_EMAIL) {
-    alert("✅ Admin access granted");
-    isAdmin = true;
-    loadImages();
-  } else {
-    alert("❌ Access denied");
-  }
+document.getElementById("login").onclick=async()=>{
+  const res=await signInWithPopup(auth,provider);
+  if(res.user.email===ADMIN_EMAIL){
+    alert("✅ Admin access granted");isAdmin=true;loadImages();
+  }else alert("❌ Access denied");
 };
 
-async function loadImages() {
-  const snap = await getDocs(collection(db, "images"));
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-  snap.forEach(docSnap => {
-    const data = docSnap.data();
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <img src="${data.url}" />
-      <p>${data.title}</p>
-      <button onclick="approve('${docSnap.id}')">Approve</button>
-      <button onclick="del('${docSnap.id}')">Delete</button>
-    `;
+async function loadImages(){
+  const snap=await getDocs(collection(db,"images"));
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+  snap.forEach(d=>{
+    const data=d.data();
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`<img src="${data.url}"><p>${data.title}</p>
+                   <button onclick="approve('${d.id}')">Approve</button>
+                   <button onclick="del('${d.id}')">Delete</button>`;
     grid.appendChild(div);
   });
 }
-
-window.approve = async (id) => {
-  await updateDoc(doc(db, "images", id), { status: "approved" });
-  alert("✅ Approved");
-  loadImages();
-};
-
-window.del = async (id) => {
-  await deleteDoc(doc(db, "images", id));
-  alert("🗑️ Deleted");
-  loadImages();
-};
+window.approve=async(id)=>{await updateDoc(doc(db,"images",id),{status:"approved"});alert("✅ Approved");loadImages();};
+window.del=async(id)=>{await deleteDoc(doc(db,"images",id));alert("🗑️ Deleted");loadImages();};
 </script>
-
 </body>
 </html><script>// ==========================
 // 🔥 Firebase Config for NeuroGallery
@@ -104,181 +82,4 @@ export const storage = getStorage(app);
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 
-console.log("✅ Firebase initialized successfully");</script> = async ()=>{
-  try {
-    if(auth.currentUser){ await signOut(auth); return; }
-    await signInWithPopup(auth, provider);
-  } catch(err){
-    alert("Login failed: " + err.message);
-    console.error(err);
-  }
-};
-
-/* ---- Approve all ---- */
-approveAllBtn.onclick = async ()=>{
-  if(!isAdmin){ alert('Admin only'); return; }
-  const cards = document.querySelectorAll('[data-id][data-status="pending"]');
-  const ops = [];
-  cards.forEach(c=>{
-    const id = c.getAttribute('data-id');
-    ops.push(updateDoc(doc(collection(db,'images'), id), { status:'approved' }));
-  });
-  await Promise.all(ops);
-  alert('Approved all pending.');
-};
-
-/* ---- Load & render ---- */
-const q = query(collection(db,'images'), orderBy('createdAt','desc'));
-onSnapshot(q, (snap)=>{
-  const items = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-  render(items);
-});
-
-function render(items){
-  const total = items.length;
-  const pending = items.filter(it=>it.status==='pending').length;
-  const approved = items.filter(it=>it.status==='approved').length;
-
-  stats.innerHTML = `
-    <div class="stat">Total: <b>${total}</b></div>
-    <div class="stat">Approved: <b style="color:#19d18a">${approved}</b></div>
-    <div class="stat">Pending: <b style="color:#ff5c5c">${pending}</b></div>
-  `;
-
-  grid.innerHTML = '';
-  items.forEach(it=>{
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.setAttribute('data-id', it.id);
-    card.setAttribute('data-status', it.status||'approved');
-    card.innerHTML = `
-      <span class="status-badge ${it.status==='pending'?'pending':'approved'}">${it.status||'approved'}</span>
-      <img src="${it.url}" alt="">
-      <div class="meta">
-        <div style="font-weight:800">${it.title||'Untitled'}</div>
-        <div class="small">Cat: ${it.cat||'--'}</div>
-        <div class="small">${(it.prompt||'').slice(0,120)}${(it.prompt||'').length>120?'…':''}</div>
-        <div class="row">
-          <button class="btn ok" data-act="approve">Approve</button>
-          <button class="btn bad" data-act="delete">Delete</button>
-        </div>
-      </div>
-    `;
-
-    const approveBtn = card.querySelector('[data-act="approve"]');
-    const delBtn = card.querySelector('[data-act="delete"]');
-
-    approveBtn.onclick = ()=> approve(it);
-    delBtn.onclick = ()=> remove(it);
-
-    grid.appendChild(card);
-  });
-}
-
-/* ---- Approve / Delete ---- */
-async function approve(it){
-  if(!isAdmin){ alert('Admin only'); return; }
-  await updateDoc(doc(collection(db,'images'), it.id), { status:'approved' });
-}
-
-async function remove(it){
-  if(!isAdmin){ alert('Admin only'); return; }
-  if(!confirm('Delete this image and file?')) return;
-  try{
-    await deleteDoc(doc(collection(db,'images'), it.id));
-    if(it.storagePath){ await deleteObject(ref(storage, it.storagePath)); }
-  }catch(e){
-    alert('Delete failed: '+e.message);
-  }
-}
-</script>
-</body>
-</html>ved').length;
-  const byCat = items.reduce((m,it)=>((m[it.cat]= (m[it.cat]||0)+1),m),{});
-  statbar.innerHTML = `
-    <div class="stat">Total: <b>${total}</b></div>
-    <div class="stat">Approved: <b style="color:var(--ok)">${approved}</b></div>
-    <div class="stat">Pending: <b style="color:var(--bad)">${pending}</b></div>
-    ${Object.keys(byCat).map(c=>`<div class="stat">${c}: <b>${byCat[c]}</b></div>`).join('')}
-  `;
-}
-
-/* Grid */
-function renderGrid(){
-  grid.innerHTML='';
-  items.forEach((it,idx)=>{
-    const el=document.createElement('div');
-    el.className='card';
-    el.innerHTML=`
-      <span class="status-badge ${it.status==='pending'?'pending':'approved'}">${it.status}</span>
-      <img src="${it.src}" alt="">
-      <div class="meta">
-        <div style="font-weight:800">${it.title||'Untitled'}</div>
-        <div class="small">Cat: ${it.cat||'Unknown'}</div>
-        <div class="small" title="${it.prompt||''}">${(it.prompt||'').slice(0,90)}${(it.prompt||'').length>90?'…':''}</div>
-        <div class="row">
-          <button class="btn ok" onclick="toggleStatus(${idx})">Toggle</button>
-          <button class="btn bad" onclick="removeItem(${idx})">Delete</button>
-        </div>
-      </div>`;
-    grid.appendChild(el);
-  });
-}
-
-/* Actions */
-window.toggleStatus=(i)=>{
-  items[i].status = (items[i].status==='pending'?'approved':'pending');
-  localStorage.setItem(LS_ITEMS, JSON.stringify(items));
-  renderAll();
-};
-window.removeItem=(i)=>{
-  if(!confirm('Delete this image?'))return;
-  items.splice(i,1);
-  localStorage.setItem(LS_ITEMS, JSON.stringify(items));
-  renderAll();
-};
-
-/* Users */
-function renderUsers(){
-  usersBox.innerHTML='';
-  const map={};
-  items.forEach(it=>{
-    const a=it.author||'Guest';
-    map[a]=(map[a]||0)+1;
-  });
-  const keys=Object.keys(map);
-  if(!keys.length){usersBox.innerHTML='<div class="small">No user data.</div>';return;}
-  keys.sort((a,b)=>map[b]-map[a]).forEach(u=>{
-    const row=document.createElement('div');
-    row.className='kv';
-    row.innerHTML=`<span>${u}</span><span><b>${map[u]}</b> uploads</span>`;
-    usersBox.appendChild(row);
-  });
-}
-
-/* Analytics */
-function renderAnalytics(){
-  anOverview.innerHTML='';
-  const total=items.length;
-  const approved=items.filter(it=>it.status==='approved').length;
-  const pending=items.filter(it=>it.status==='pending').length;
-  const byCat=items.reduce((m,it)=>((m[it.cat]= (m[it.cat]||0)+1),m),{});
-  const box=document.createElement('div');
-  box.className='box';
-  box.innerHTML=`
-    <div class="kv"><span>Total</span><b>${total}</b></div>
-    <div class="kv"><span>Approved</span><b style="color:var(--ok)">${approved}</b></div>
-    <div class="kv"><span>Pending</span><b style="color:var(--bad)">${pending}</b></div>
-    ${Object.keys(byCat).map(c=>`<div class="kv"><span>${c}</span><b>${byCat[c]}</b></div>`).join('')}
-  `;
-  anOverview.appendChild(box);
-}
-
-/* Boot */
-function boot(){
-  items = JSON.parse(localStorage.getItem(LS_ITEMS) || '[]');
-  renderAll();
-}
-</script>
-</body>
-</html>
+console.log("✅ Firebase initialized successfully");</script>

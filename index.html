@@ -1,8 +1,8 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>NeuroGallery -- AI Image Hub</title>
 <style>
 :root {
@@ -86,13 +86,32 @@ button:hover {
   font-weight:600;
   color:var(--accent);
 }
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:20px;
+}
 .card {
   background:var(--card);
   border:1px solid var(--border);
   border-radius:10px;
-  padding:12px;
-  margin-bottom:16px;
+  overflow:hidden;
+  text-align:center;
+  transition:transform 0.3s;
 }
+.card:hover { transform:scale(1.03); }
+.card img { width:100%; display:block; }
+.upload-btn {
+  background:#00e0ff;
+  color:#000;
+  border:none;
+  padding:8px 15px;
+  font-weight:600;
+  border-radius:6px;
+  cursor:pointer;
+  margin-bottom:20px;
+}
+.upload-btn:hover { background:#ffd166; }
 </style>
 </head>
 
@@ -100,8 +119,8 @@ button:hover {
 <header>
   <h1>NeuroGallery</h1>
   <nav>
-    <a href="#">About</a>
-    <a href="#">Upload</a>
+    <a href="#" id="aboutBtn">About</a>
+    <button class="upload-btn" id="uploadBtn">Upload</button>
     <span id="userInfo"></span>
     <button id="loginBtn">Login with Google</button>
   </nav>
@@ -109,58 +128,57 @@ button:hover {
 
 <main>
   <h2>Newest Uploads</h2>
-  <p>All images are AI-generated. Free for personal use.<br>© NeuroGallery</p>
-
-  <div id="gallery">
-    <div class="card">🖼️ Image preview area (gallery will load here)</div>
-  </div>
+  <div id="gallery" class="grid"></div>
 </main>
 
 <footer>
-  NeuroGallery -- AI-generated image sharing hub.  
+  All images are AI-generated. Free for personal use.<br>
+  © NeuroGallery
 </footer>
 
-<!-- ✅ Firebase Login Script -->
+<!-- ✅ Firebase + Logic -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-// ✅ Firebase config
+// 🔹 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCK-o9vIFlrlySSyfamIf9bzL3BqNGIq3o",
   authDomain: "neurogaller.firebaseapp.com",
   projectId: "neurogaller",
-  storageBucket: "neurogaller.firebasestorage.app",
+  storageBucket: "neurogaller.appspot.com",
   messagingSenderId: "353726562637",
   appId: "1:353726562637:web:8b2a53a1081b43a3cdb704",
   measurementId: "G-2VW3RB5320"
 };
 
-// ✅ Initialize Firebase
+// 🔹 Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// ✅ Elements
+// 🔹 Elements
 const loginBtn = document.getElementById("loginBtn");
+const uploadBtn = document.getElementById("uploadBtn");
+const gallery = document.getElementById("gallery");
 const userInfo = document.getElementById("userInfo");
 
-// ✅ Login / Logout logic
+// 🔹 Login / Logout
 loginBtn.onclick = async () => {
-  if (auth.currentUser) {
-    await signOut(auth);
-  } else {
-    await signInWithPopup(auth, provider);
-  }
+  if (auth.currentUser) await signOut(auth);
+  else await signInWithPopup(auth, provider);
 };
 
-// ✅ On login change
+// 🔹 On login state change
 onAuthStateChanged(auth, (user) => {
   if (user) {
     userInfo.textContent = `👤 ${user.displayName}`;
     loginBtn.textContent = "Logout";
 
-    // Admin link
     if (user.email === "ingfin14@gmail.com") {
       const adminLink = document.createElement("a");
       adminLink.href = "admin.html";
@@ -174,24 +192,50 @@ onAuthStateChanged(auth, (user) => {
     loginBtn.textContent = "Login with Google";
   }
 });
-</script>
-</body>
-</html>-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCK-o9vIFlrlySSyfamIf9bzL3BqNGIq3o",
-  authDomain: "neurogaller.firebaseapp.com",
-  projectId: "neurogaller",
-  storageBucket: "neurogaller.appspot.com",
-  messagingSenderId: "353726562637",
-  appId: "1:353726562637:web:8b2a53a1081b43a3cdb704",
-  measurementId: "G-2VW3RB5320"
+// 🔹 Upload image
+uploadBtn.onclick = async () => {
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "image/*";
+  fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const storageRef = ref(storage, "uploads/" + file.name);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+
+    await addDoc(collection(db, "images"), {
+      title: file.name,
+      url,
+      status: "pending",
+      createdAt: serverTimestamp(),
+    });
+
+    alert("✅ Image uploaded! Waiting for admin approval.");
+  };
+  fileInput.click();
 };
 
-export const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const auth = getAuth(app);
-export const provider = new GoogleAuthProvider();
+// 🔹 Load approved images
+async function loadImages() {
+  gallery.innerHTML = "<p>Loading...</p>";
+  const snapshot = await getDocs(collection(db, "images"));
+  gallery.innerHTML = "";
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.status === "approved") {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `<img src="${data.url}" alt="${data.title}">
+                       <p>${data.title || "Untitled"}</p>`;
+      gallery.appendChild(div);
+    }
+  });
+}
 
-console.log("✅ Firebase initialized successfully");</script>
+loadImages();
+</script>
+</body>
+</html>

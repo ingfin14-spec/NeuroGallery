@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>NeuroGallery -- AI Image Hub</title>
+<title>NeuroGallery -- AI Art Hub</title>
 <style>
 :root {
   --accent:#00e0ff;
@@ -20,98 +20,36 @@ body {
   min-height:100vh;
 }
 header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px 24px;
-  background:rgba(0,0,0,0.6);
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 24px;background:rgba(0,0,0,0.7);
   border-bottom:1px solid var(--border);
-  position:sticky;
-  top:0;
-  z-index:10;
-  backdrop-filter:blur(6px);
+  position:sticky;top:0;z-index:10;backdrop-filter:blur(6px);
 }
 header h1 {
-  color:var(--accent);
-  font-size:1.3rem;
-  font-weight:700;
-  margin:0;
-  text-shadow:0 0 10px var(--accent);
+  color:var(--accent);font-size:1.3rem;font-weight:700;
+  text-shadow:0 0 10px var(--accent);margin:0;
 }
 nav a, nav button {
-  color:var(--accent);
-  background:none;
-  border:none;
-  font-weight:600;
-  margin-left:18px;
-  cursor:pointer;
-  text-decoration:none;
-  font-size:1rem;
-  transition:color .2s;
+  color:var(--accent);background:none;border:none;font-weight:600;
+  margin-left:16px;cursor:pointer;text-decoration:none;font-size:1rem;
 }
-nav a:hover, nav button:hover {
-  color:#fff;
-}
-main {
-  max-width:1100px;
-  margin:40px auto;
-  padding:0 20px;
-}
-h2 {
-  font-size:1.6rem;
-  margin-bottom:20px;
-}
-footer {
-  text-align:center;
-  padding:30px;
-  font-size:0.9rem;
-  opacity:.7;
-}
-button {
-  cursor:pointer;
-  transition:0.3s;
-}
-button:hover {
-  filter:brightness(1.2);
-}
-#loginBtn {
-  background:var(--accent);
-  color:#000;
-  padding:6px 14px;
-  border-radius:6px;
-  font-weight:600;
-}
-#userInfo {
-  margin-left:12px;
-  font-weight:600;
-  color:var(--accent);
-}
-.grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:20px;
-}
-.card {
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:10px;
-  overflow:hidden;
-  text-align:center;
-  transition:transform 0.3s;
-}
-.card:hover { transform:scale(1.03); }
-.card img { width:100%; display:block; }
-.upload-btn {
-  background:#00e0ff;
-  color:#000;
-  border:none;
-  padding:8px 15px;
-  font-weight:600;
-  border-radius:6px;
-  cursor:pointer;
-  margin-bottom:20px;
-}
-.upload-btn:hover { background:#ffd166; }
+nav a:hover, nav button:hover {color:#fff;}
+main {max-width:1100px;margin:40px auto;padding:0 20px;}
+h2 {font-size:1.6rem;margin-bottom:20px;}
+footer {text-align:center;padding:30px;font-size:0.9rem;opacity:.7;}
+button {cursor:pointer;transition:.3s;}
+button:hover {filter:brightness(1.2);}
+#loginBtn {background:var(--accent);color:#000;padding:6px 14px;
+  border-radius:6px;font-weight:600;}
+#userInfo {margin-left:12px;font-weight:600;color:var(--accent);}
+.grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;}
+.card {background:var(--card);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;text-align:center;transition:transform 0.3s;}
+.card:hover {transform:scale(1.03);}
+.card img {width:100%;display:block;}
+.upload-btn {background:#00e0ff;color:#000;border:none;padding:8px 15px;
+  font-weight:600;border-radius:6px;cursor:pointer;margin-bottom:20px;}
+.upload-btn:hover {background:#ffd166;}
 </style>
 </head>
 
@@ -132,18 +70,15 @@ button:hover {
 </main>
 
 <footer>
-  All images are AI-generated. Free for personal use.<br>
-  © NeuroGallery
+  All images are AI-generated. Free for personal use.<br>© NeuroGallery
 </footer>
 
-<!-- ✅ Firebase + Logic -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-// 🔹 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCK-o9vIFlrlySSyfamIf9bzL3BqNGIq3o",
   authDomain: "neurogaller.firebaseapp.com",
@@ -154,31 +89,26 @@ const firebaseConfig = {
   measurementId: "G-2VW3RB5320"
 };
 
-// 🔹 Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// 🔹 Elements
 const loginBtn = document.getElementById("loginBtn");
 const uploadBtn = document.getElementById("uploadBtn");
 const gallery = document.getElementById("gallery");
 const userInfo = document.getElementById("userInfo");
 
-// 🔹 Login / Logout
 loginBtn.onclick = async () => {
   if (auth.currentUser) await signOut(auth);
   else await signInWithPopup(auth, provider);
 };
 
-// 🔹 On login state change
 onAuthStateChanged(auth, (user) => {
   if (user) {
     userInfo.textContent = `👤 ${user.displayName}`;
     loginBtn.textContent = "Logout";
-
     if (user.email === "ingfin14@gmail.com") {
       const adminLink = document.createElement("a");
       adminLink.href = "admin.html";
@@ -186,14 +116,12 @@ onAuthStateChanged(auth, (user) => {
       adminLink.style = "color:var(--accent);margin-left:8px;text-decoration:none;";
       userInfo.appendChild(adminLink);
     }
-
   } else {
     userInfo.textContent = "";
     loginBtn.textContent = "Login with Google";
   }
 });
 
-// 🔹 Upload image
 uploadBtn.onclick = async () => {
   const fileInput = document.createElement("input");
   fileInput.type = "file";
@@ -201,28 +129,39 @@ uploadBtn.onclick = async () => {
   fileInput.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const storageRef = ref(storage, "uploads/" + file.name);
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
-
     await addDoc(collection(db, "images"), {
       title: file.name,
       url,
       status: "pending",
       createdAt: serverTimestamp(),
     });
-
-    alert("✅ Image uploaded! Waiting for admin approval.");
+    alert("✅ Uploaded! Waiting for admin approval.");
   };
   fileInput.click();
 };
 
-// 🔹 Load approved images
 async function loadImages() {
   gallery.innerHTML = "<p>Loading...</p>";
   const snapshot = await getDocs(collection(db, "images"));
   gallery.innerHTML = "";
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.status === "approved") {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `<img src="${data.url}" alt="${data.title}">
+                       <p>${data.title || "Untitled"}</p>`;
+      gallery.appendChild(div);
+    }
+  });
+}
+loadImages();
+</script>
+</body>
+</html> gallery.innerHTML = "";
   snapshot.forEach(doc => {
     const data = doc.data();
     if (data.status === "approved") {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>NeuroGallery -- Admin Panel</title>
 <style>
 body{background:#0d0f13;color:#f2f2f2;font-family:Inter,system-ui,sans-serif;margin:0;padding:20px}
@@ -12,7 +12,6 @@ button:hover{background:#ffd166}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:20px}
 .card{background:#181a20;padding:10px;border-radius:10px;text-align:center}
 .card img{width:100%;border-radius:8px;margin-bottom:8px}
-.hidden{display:none}
 </style>
 </head>
 <body>
@@ -25,7 +24,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/fireba
 import { getFirestore, getDocs, updateDoc, deleteDoc, doc, collection } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-// ✅ Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCK-o9vIFlrlySSyfamIf9bzL3BqNGIq3o",
   authDomain: "neurogaller.firebaseapp.com",
@@ -36,7 +34,6 @@ const firebaseConfig = {
   measurementId: "G-2VW3RB5320"
 };
 
-// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -47,34 +44,18 @@ const loginBtn = document.getElementById("loginBtn");
 const adminStatus = document.getElementById("adminStatus");
 const grid = document.getElementById("grid");
 
-// 🔹 Login button
 loginBtn.onclick = async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (err) {
-    alert("❌ Login error: " + err.message);
-  }
+  try { await signInWithPopup(auth, provider); }
+  catch (err) { alert("Login error: " + err.message); }
 };
 
-// 🔹 Track login state
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    adminStatus.textContent = "Not logged in.";
-    grid.innerHTML = "";
-    return;
-  }
-
-  if (user.email !== ADMIN_EMAIL) {
-    adminStatus.textContent = `Access denied for ${user.email}`;
-    grid.innerHTML = "";
-    return;
-  }
-
-  adminStatus.textContent = `✅ Logged in as admin (${user.email})`;
+  if (!user) { adminStatus.textContent = "Not logged in."; grid.innerHTML=""; return; }
+  if (user.email !== ADMIN_EMAIL) { adminStatus.textContent=`Access denied for ${user.email}`; grid.innerHTML=""; return; }
+  adminStatus.innerHTML = `✅ Logged in as admin<br>(${user.email})`;
   loadImages();
 });
 
-// 🔹 Load all images from Firestore
 async function loadImages() {
   grid.innerHTML = "<p>Loading images...</p>";
   const snap = await getDocs(collection(db, "images"));
@@ -93,8 +74,11 @@ async function loadImages() {
     grid.appendChild(div);
   });
 }
-
-// 🔹 Approve image
+window.approve = async (id) => { await updateDoc(doc(db, "images", id), { status: "approved" }); loadImages(); };
+window.remove = async (id) => { await deleteDoc(doc(db, "images", id)); loadImages(); };
+</script>
+</body>
+</html>ge
 window.approve = async (id) => {
   await updateDoc(doc(db, "images", id), { status: "approved" });
   alert("✅ Image approved");

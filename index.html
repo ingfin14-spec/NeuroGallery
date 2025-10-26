@@ -1,145 +1,187 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NeuroGallery -- AI Art Collection</title>
-<style>
-:root{
-  --bg:#101319;--card:#181c24;--text:#f3f6fa;--muted:#a8b0ba;
-  --accent:#00eaff;--border:rgba(255,255,255,0.12);
-  --gold:#ffd166;--ok:#19d18a;--bad:#ff5c5c;
-}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh;}
-header{
-  position:fixed;top:0;left:0;width:100%;
-  background:rgba(16,19,25,0.9);backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;
-  padding:12px 20px;z-index:10;
-}
-h1{margin:0;color:var(--accent);font-size:1.2rem;text-shadow:0 0 10px var(--accent);}
-nav a{color:var(--text);margin:0 10px;text-decoration:none;font-weight:600;transition:.3s;}
-nav a:hover{color:var(--accent);}
-main{max-width:1200px;margin:100px auto 60px;padding:0 16px;}
-#uploadInput{display:none;}
-button{cursor:pointer;border:none;border-radius:8px;padding:8px 14px;font-weight:700;}
-.btn{background:var(--accent);color:#000;}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative;}
-.card img{width:100%;height:200px;object-fit:cover;cursor:pointer;}
-.meta{padding:10px;font-size:.9rem;color:var(--muted);}
-footer{text-align:center;color:var(--muted);padding:20px 0;border-top:1px solid var(--border);}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:100;}
-.modal.active{display:flex;}
-.modal-content{position:relative;max-width:90%;max-height:90%;}
-.modal-content img{width:100%;height:auto;border-radius:10px;}
-.modal button{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.5rem;}
-.modal .close{top:20px;right:20px;transform:none;}
-.modal .prev{left:-60px;}
-.modal .next{right:-60px;}
-.download-btn{margin-top:10px;background:var(--accent);color:#000;padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:700;}
-.stats{margin-bottom:20px;font-size:.9rem;color:var(--muted);}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroGallery</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0d0f13;
+      color: #f2f2f2;
+      font-family: "Inter", sans-serif;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: rgba(10, 11, 15, 0.95);
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+    .logo { color: #00eaff; font-weight: 700; font-size: 1.4em; }
+    nav a, nav button {
+      color: #00eaff;
+      background: none;
+      border: none;
+      font-size: 1em;
+      font-weight: 600;
+      margin-left: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    nav a:hover, nav button:hover { color: #ffd166; }
+
+    main { padding: 20px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #181a20;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      transition: transform 0.3s;
+    }
+    .card:hover { transform: scale(1.02); }
+    .card img { width: 100%; display: block; }
+    footer {
+      text-align: center;
+      padding: 30px 10px;
+      font-size: 0.9em;
+      color: #ccc;
+    }
+    .btn {
+      background: #00eaff;
+      border: none;
+      color: #000;
+      padding: 8px 15px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn:hover { background: #ffd166; }
+  </style>
 </head>
 <body>
 
-<header>
-  <h1>NeuroGallery</h1>
-  <nav>
-    <a href="#" id="aboutBtn">About</a>
-    <label class="btn" for="uploadInput">Upload</label>
-    <input type="file" id="uploadInput" multiple accept="image/*">
-  </nav>
-</header>
+  <header>
+    <div class="logo">NeuroGallery</div>
+    <nav>
+      <a href="#" id="aboutBtn">About</a>
+      <button id="uploadBtn">Upload</button>
+      <button id="loginBtn">Login with Google</button>
+      <a href="admin.html" target="_blank">Admin</a>
+    </nav>
+  </header>
 
-<main>
-  <div class="stats" id="stats"></div>
-  <div class="grid" id="gallery"></div>
-</main>
+  <main>
+    <h2>Newest Uploads</h2>
+    <div id="gallery" class="grid"></div>
+  </main>
 
-<footer>All images are AI-generated. Free for personal use. © NeuroGallery</footer>
+  <footer>
+    All images are AI-generated. Free for personal use.<br>
+    © NeuroGallery
+  </footer>
 
-<!-- Modal -->
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <img id="modalImg" src="">
-    <button class="close" id="closeBtn">✕</button>
-    <button class="prev" id="prevBtn">⟨</button>
-    <button class="next" id="nextBtn">⟩</button>
-    <div style="text-align:center;margin-top:10px;">
-      <a id="downloadBtn" class="download-btn" download>Download</a>
-    </div>
-  </div>
-</div>
+  <script type="module">
+    import { db, storage, auth, provider } from './firebase-config.js';
+    import { getDocs, collection, addDoc, serverTimestamp } 
+      from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { ref, uploadBytes, getDownloadURL } 
+      from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+    import { signInWithPopup } 
+      from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-<script type="module">
-import { db, storage } from './firebase-config.js';
-import { collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+    const gallery = document.getElementById('gallery');
 
-const gallery = document.getElementById("gallery");
-const uploadInput = document.getElementById("uploadInput");
-const modal = document.getElementById("modal");
-const modalImg = document.getElementById("modalImg");
-const closeBtn = document.getElementById("closeBtn");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const stats = document.getElementById("stats");
+    async function loadImages() {
+      gallery.innerHTML = "<p>Loading...</p>";
+      const snapshot = await getDocs(collection(db, "images"));
+      gallery.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.status === "approved") {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `<img src="${data.url}" alt="${data.title}">
+                           <p>${data.title || "Untitled"}</p>`;
+          gallery.appendChild(div);
+        }
+      });
+    }
+    loadImages();
 
-let images = [];
-let currentIndex = 0;
+    document.getElementById("loginBtn").onclick = async () => {
+      try {
+        await signInWithPopup(auth, provider);
+        alert("✅ Logged in successfully!");
+      } catch (e) {
+        alert("Login failed: " + e.message);
+      }
+    };
 
-/* ---- Upload ---- */
-uploadInput.addEventListener("change", async (e)=>{
-  const files = Array.from(e.target.files);
-  for(const file of files){
-    const storageRef = ref(storage, "uploads/"+file.name);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    await addDoc(collection(db, "images"), {
-      url,
-      title:file.name,
-      status:"pending",
-      createdAt: serverTimestamp(),
-      views:0,
-      downloads:0
-    });
-  }
-  alert("Uploaded! Waiting for admin approval.");
-});
+    document.getElementById("uploadBtn").onclick = async () => {
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const storageRef = ref(storage, 'uploads/' + file.name);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        await addDoc(collection(db, "images"), {
+          title: file.name,
+          url,
+          status: "pending",
+          createdAt: serverTimestamp()
+        });
+        alert("✅ Uploaded (pending approval).");
+      };
+      fileInput.click();
+    };
+  </script>
+</body>
+</html><script>// ==========================
+// 🔥 Firebase Config for NeuroGallery
+// ==========================
 
-/* ---- Load approved images ---- */
-const q = query(collection(db, "images"), where("status", "==", "approved"), orderBy("createdAt", "desc"));
-onSnapshot(q, (snap)=>{
-  images = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-  renderGallery();
-});
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { 
+  getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { 
+  getStorage, ref, uploadBytes, getDownloadURL, deleteObject 
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+import { 
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
-/* ---- Render ---- */
-function renderGallery(){
-  stats.innerHTML = `🖼️ Total: ${images.length}`;
-  gallery.innerHTML = "";
-  images.forEach((img,i)=>{
-    const card = document.createElement("div");
-    card.className="card";
-    card.innerHTML = `<img src="${img.url}" alt=""><div class="meta">${img.title||''}</div>`;
-    card.querySelector("img").onclick = ()=> openModal(i);
-    gallery.appendChild(card);
-  });
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyCK-o9vIFlrlySSyfamIf9bzL3BqNGIq3o",
+  authDomain: "neurogaller.firebaseapp.com",
+  projectId: "neurogaller",
+  storageBucket: "neurogaller.appspot.com",
+  messagingSenderId: "353726562637",
+  appId: "1:353726562637:web:8b2a53a1081b43a3cdb704",
+  measurementId: "G-2VW3RB5320"
+};
 
-/* ---- Modal ---- */
-function openModal(index){
-  currentIndex=index;
-  const img=images[index];
-  modalImg.src=img.url;
-  modal.classList.add("active");
-  downloadBtn.href=img.url;
-  updateViews(img.id, img.views);
-}
-function closeModal(){modal.classList.remove("active");}
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+export const auth = getAuth(app);
+export const provider = new GoogleAuthProvider();
+
+console.log("✅ Firebase initialized successfully");</script>ve("active");}
 function prev(){if(currentIndex>0)openModal(currentIndex-1);}
 function next(){if(currentIndex<images.length-1)openModal(currentIndex+1);}
 

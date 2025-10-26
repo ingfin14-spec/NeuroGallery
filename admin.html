@@ -1,7 +1,8 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NeuroGallery -- Admin</title>
 <style>
 :root{
@@ -9,7 +10,8 @@
   --accent:#00eaff; --gold:#ffd166; --border:rgba(0,234,255,.18);
   --ok:#19d18a; --bad:#ff5c5c;
 }
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
 header{max-width:1200px;margin:0 auto;padding:16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
 h1{margin:0;color:var(--accent);text-shadow:0 0 10px var(--accent);font-size:1.2rem}
 main{max-width:1200px;margin:0 auto 40px;padding:0 16px}
@@ -21,14 +23,15 @@ main{max-width:1200px;margin:0 auto 40px;padding:0 16px}
 .status-badge{position:absolute;top:8px;left:8px;padding:4px 8px;border-radius:6px;font-size:.75rem;font-weight:700}
 .status-badge.pending{background:var(--bad);color:#fff}
 .status-badge.approved{background:var(--ok);color:#000}
-.meta{padding:10px} .small{color:var(--muted);font-size:.9rem}
+.meta{padding:10px}
+.small{color:var(--muted);font-size:.9rem}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .btn{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer}
 .btn.main{background:var(--accent);color:#000;border:none}
 .btn.ok{background:rgba(25,209,138,.15);border-color:rgba(25,209,138,.35)}
 .btn.bad{background:rgba(255,92,92,.12);border-color:rgba(255,92,92,.35)}
 footer{max-width:1200px;margin:20px auto 30px;color:#9aa4af;text-align:center}
-.warn{color:var(--bad);font-weight:800}
+.warn{color:var(--bad);font-weight:800;text-align:center;margin:10px 0}
 </style>
 </head>
 <body>
@@ -42,7 +45,7 @@ footer{max-width:1200px;margin:20px auto 30px;color:#9aa4af;text-align:center}
 
 <main>
   <div class="statbar" id="stats"></div>
-  <div id="warn" class="warn" style="text-align:center;margin-bottom:10px;"></div>
+  <div id="warn" class="warn"></div>
   <div class="grid" id="grid"></div>
 </main>
 
@@ -56,10 +59,10 @@ import {
   deleteObject, ref
 } from './firebase-config.js';
 
-/* ---- CONFIG: set your admin email here ---- */
-const ADMIN_EMAIL = "ingfin14@gmail.com"; // ← ЗАМІНИ НА СВІЙ GOOGLE E-MAIL
+/* ---- CONFIG ---- */
+const ADMIN_EMAIL = "ingfin14@gmail.com";
 
-/* ---- UI ---- */
+/* ---- Elements ---- */
 const signBtn = document.getElementById('signBtn');
 const approveAllBtn = document.getElementById('approveAll');
 const stats = document.getElementById('stats');
@@ -67,6 +70,8 @@ const grid = document.getElementById('grid');
 const warn = document.getElementById('warn');
 
 let isAdmin = false;
+
+/* ---- Auth ---- */
 onAuthStateChanged(auth, (user)=>{
   if(user){
     signBtn.textContent = `Sign out (${user.email})`;
@@ -80,10 +85,16 @@ onAuthStateChanged(auth, (user)=>{
 });
 
 signBtn.onclick = async ()=>{
-  if(auth.currentUser){ await signOut(auth); return; }
-  await signInWithPopup(auth, provider);
+  try {
+    if(auth.currentUser){ await signOut(auth); return; }
+    await signInWithPopup(auth, provider);
+  } catch(err){
+    alert("Login failed: " + err.message);
+    console.error(err);
+  }
 };
 
+/* ---- Approve all ---- */
 approveAllBtn.onclick = async ()=>{
   if(!isAdmin){ alert('Admin only'); return; }
   const cards = document.querySelectorAll('[data-id][data-status="pending"]');
@@ -96,7 +107,7 @@ approveAllBtn.onclick = async ()=>{
   alert('Approved all pending.');
 };
 
-/* ---- Live list ---- */
+/* ---- Load & render ---- */
 const q = query(collection(db,'images'), orderBy('createdAt','desc'));
 onSnapshot(q, (snap)=>{
   const items = snap.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -107,11 +118,13 @@ function render(items){
   const total = items.length;
   const pending = items.filter(it=>it.status==='pending').length;
   const approved = items.filter(it=>it.status==='approved').length;
+
   stats.innerHTML = `
     <div class="stat">Total: <b>${total}</b></div>
     <div class="stat">Approved: <b style="color:#19d18a">${approved}</b></div>
     <div class="stat">Pending: <b style="color:#ff5c5c">${pending}</b></div>
   `;
+
   grid.innerHTML = '';
   items.forEach(it=>{
     const card = document.createElement('div');
@@ -131,14 +144,18 @@ function render(items){
         </div>
       </div>
     `;
+
     const approveBtn = card.querySelector('[data-act="approve"]');
     const delBtn = card.querySelector('[data-act="delete"]');
+
     approveBtn.onclick = ()=> approve(it);
     delBtn.onclick = ()=> remove(it);
+
     grid.appendChild(card);
   });
 }
 
+/* ---- Approve / Delete ---- */
 async function approve(it){
   if(!isAdmin){ alert('Admin only'); return; }
   await updateDoc(doc(collection(db,'images'), it.id), { status:'approved' });
@@ -148,20 +165,15 @@ async function remove(it){
   if(!isAdmin){ alert('Admin only'); return; }
   if(!confirm('Delete this image and file?')) return;
   try{
-    // delete Firestore doc
     await deleteDoc(doc(collection(db,'images'), it.id));
-    // delete Storage file (if path stored)
-    if(it.storagePath){
-      await deleteObject(ref(storage, it.storagePath));
-    }
+    if(it.storagePath){ await deleteObject(ref(storage, it.storagePath)); }
   }catch(e){
     alert('Delete failed: '+e.message);
   }
 }
 </script>
 </body>
-</html>y>
-</html>t.status==='approved').length;
+</html>ved').length;
   const byCat = items.reduce((m,it)=>((m[it.cat]= (m[it.cat]||0)+1),m),{});
   statbar.innerHTML = `
     <div class="stat">Total: <b>${total}</b></div>

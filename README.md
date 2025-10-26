@@ -3,7 +3,7 @@
 A modern web-based gallery for showcasing **AI-generated images** (Midjourney, DALL·E, Leonardo, Stable Diffusion).  
 All content is stored locally and runs **100% client-side** — perfect for GitHub Pages or offline use.
 
-🌐 **Live Demo:** [Visit NeuroGallery](https://ingfin14-spec.github.io)
+🌐 **Live Demo:** [Visit NeuroGallery](https://ingfin14-spec.github.io/NeuroGallery/) 
 
 ---
 

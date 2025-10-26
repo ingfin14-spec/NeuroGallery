@@ -1,8 +1,7 @@
 <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NeuroGallery -- Admin</title>
 <style>
 :root{
@@ -10,152 +9,159 @@
   --accent:#00eaff; --gold:#ffd166; --border:rgba(0,234,255,.18);
   --ok:#19d18a; --bad:#ff5c5c;
 }
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
 header{max-width:1200px;margin:0 auto;padding:16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
 h1{margin:0;color:var(--accent);text-shadow:0 0 10px var(--accent);font-size:1.2rem}
-.tabs{display:flex;gap:8px;flex-wrap:wrap}
-.tab{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-.tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
 main{max-width:1200px;margin:0 auto 40px;padding:0 16px}
-.section{display:none}
-.section.active{display:block}
 .statbar{background:rgba(21,26,34,.9);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .stat{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;position:relative}
-.card img{width:100%;height:160px;object-fit:cover}
+.card img{width:100%;height:180px;object-fit:cover}
 .status-badge{position:absolute;top:8px;left:8px;padding:4px 8px;border-radius:6px;font-size:.75rem;font-weight:700}
 .status-badge.pending{background:var(--bad);color:#fff}
 .status-badge.approved{background:var(--ok);color:#000}
-.card .meta{padding:10px}
-.small{color:var(--muted);font-size:.9rem}
-.row{display:flex;gap:8px;flex-wrap:wrap}
+.meta{padding:10px} .small{color:var(--muted);font-size:.9rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .btn{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer}
+.btn.main{background:var(--accent);color:#000;border:none}
 .btn.ok{background:rgba(25,209,138,.15);border-color:rgba(25,209,138,.35)}
 .btn.bad{background:rgba(255,92,92,.12);border-color:rgba(255,92,92,.35)}
-.btn.main{background:var(--accent);color:#000;border:none}
-.box{background:rgba(21,26,34,.9);border:1px solid var(--border);border-radius:12px;padding:12px}
-.list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
-.kv{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed rgba(255,255,255,.08);padding:6px 0}
-.mono{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;color:#9bd}
 footer{max-width:1200px;margin:20px auto 30px;color:#9aa4af;text-align:center}
-
-/* Login modal */
-#login{position:fixed;inset:0;background:radial-gradient(circle at center,rgba(0,0,20,.9),rgba(0,0,0,.95));display:flex;align-items:center;justify-content:center;z-index:50}
-.sheet{background:rgba(25,25,35,.95);border:1px solid var(--border);box-shadow:0 0 24px rgba(0,200,255,.25);border-radius:12px;padding:20px;width:92%;max-width:360px;text-align:center}
-.sheet h2{margin:0 0 8px;color:var(--gold)}
-.sheet input{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text)}
-.sheet .btn{width:100%}
-.note{color:var(--muted);font-size:.85rem;margin-top:6px}
+.warn{color:var(--bad);font-weight:800}
 </style>
 </head>
 <body>
-
 <header>
   <h1>NeuroGallery -- Admin</h1>
-  <div class="tabs">
-    <button class="tab active" data-tab="uploads">Uploads</button>
-    <button class="tab" data-tab="analytics">Analytics</button>
-    <button class="tab" data-tab="users">Users</button>
-    <button id="logout" class="tab">Logout</button>
+  <div class="row">
+    <button id="signBtn" class="btn main">Sign in with Google</button>
+    <button id="approveAll" class="btn">Approve All</button>
   </div>
 </header>
 
 <main>
-  <section id="uploads" class="section active">
-    <div class="statbar">
-      <div id="statbar"></div>
-      <button id="approveAll" class="btn main">Approve All</button>
-    </div>
-    <div class="grid" id="grid"></div>
-  </section>
-
-  <section id="analytics" class="section">
-    <div class="box">
-      <h3>Overview</h3>
-      <div class="list" id="anOverview"></div>
-    </div>
-  </section>
-
-  <section id="users" class="section">
-    <div class="box">
-      <h3>Contributors</h3>
-      <div class="list" id="userList"></div>
-    </div>
-  </section>
+  <div class="statbar" id="stats"></div>
+  <div id="warn" class="warn" style="text-align:center;margin-bottom:10px;"></div>
+  <div class="grid" id="grid"></div>
 </main>
 
-<footer>Offline Admin • Data in localStorage["neuro_items_v1"]</footer>
+<footer>Admin works with Firestore/Storage. Only ADMIN_EMAIL can approve/delete.</footer>
 
-<!-- Login -->
-<div id="login">
-  <div class="sheet">
-    <h2>Admin Login</h2>
-    <input type="password" id="pass" placeholder="Password" />
-    <button id="go" class="btn main">Enter</button>
-    <div id="msg" class="note"></div>
-    <p class="note">Default password: <span class="mono">admin123</span></p>
-  </div>
-</div>
+<script type="module">
+import {
+  auth, provider, signInWithPopup, signOut, onAuthStateChanged,
+  db, storage,
+  collection, query, orderBy, onSnapshot, updateDoc, deleteDoc, doc,
+  deleteObject, ref
+} from './firebase-config.js';
 
-<script>
-const ADMIN_PASSWORD = "admin123";
-const LS_ITEMS = "neuro_items_v1";
+/* ---- CONFIG: set your admin email here ---- */
+const ADMIN_EMAIL = "ingfin14@gmail.com"; // ← ЗАМІНИ НА СВІЙ GOOGLE E-MAIL
 
-/* DOM */
-const tabs = document.querySelectorAll('.tab[data-tab]');
-const sections = document.querySelectorAll('.section');
-const grid = document.getElementById('grid');
-const statbar = document.getElementById('statbar');
-const anOverview = document.getElementById('anOverview');
-const usersBox = document.getElementById('userList');
+/* ---- UI ---- */
+const signBtn = document.getElementById('signBtn');
 const approveAllBtn = document.getElementById('approveAll');
+const stats = document.getElementById('stats');
+const grid = document.getElementById('grid');
+const warn = document.getElementById('warn');
 
-/* Login */
-const loginWrap = document.getElementById('login');
-document.getElementById('go').onclick = ()=>{
-  const ok = document.getElementById('pass').value.trim() === ADMIN_PASSWORD;
-  const msg = document.getElementById('msg');
-  if(ok){ loginWrap.style.display='none'; boot(); }
-  else { msg.textContent = 'Access denied'; }
-};
-document.getElementById('logout').onclick = ()=>{ loginWrap.style.display='flex'; };
-
-/* Tabs */
-tabs.forEach(t=>{
-  t.addEventListener('click', ()=>{
-    tabs.forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    sections.forEach(s=>s.classList.remove('active'));
-    document.getElementById(t.dataset.tab).classList.add('active');
-  });
+let isAdmin = false;
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    signBtn.textContent = `Sign out (${user.email})`;
+    isAdmin = (user.email === ADMIN_EMAIL);
+    warn.textContent = isAdmin ? '' : 'You are not admin. Read-only mode.';
+  }else{
+    signBtn.textContent = 'Sign in with Google';
+    isAdmin = false;
+    warn.textContent = 'Not signed in.';
+  }
 });
 
-/* Data */
-let items = JSON.parse(localStorage.getItem(LS_ITEMS) || '[]');
-
-/* Approve All */
-approveAllBtn.onclick = ()=>{
-  items.forEach(it=>it.status='approved');
-  localStorage.setItem(LS_ITEMS, JSON.stringify(items));
-  renderAll();
-  alert('All items approved!');
+signBtn.onclick = async ()=>{
+  if(auth.currentUser){ await signOut(auth); return; }
+  await signInWithPopup(auth, provider);
 };
 
-/* Render */
-function renderAll(){
-  renderStats();
-  renderGrid();
-  renderUsers();
-  renderAnalytics();
-}
+approveAllBtn.onclick = async ()=>{
+  if(!isAdmin){ alert('Admin only'); return; }
+  const cards = document.querySelectorAll('[data-id][data-status="pending"]');
+  const ops = [];
+  cards.forEach(c=>{
+    const id = c.getAttribute('data-id');
+    ops.push(updateDoc(doc(collection(db,'images'), id), { status:'approved' }));
+  });
+  await Promise.all(ops);
+  alert('Approved all pending.');
+};
 
-/* Stats */
-function renderStats(){
+/* ---- Live list ---- */
+const q = query(collection(db,'images'), orderBy('createdAt','desc'));
+onSnapshot(q, (snap)=>{
+  const items = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+  render(items);
+});
+
+function render(items){
   const total = items.length;
   const pending = items.filter(it=>it.status==='pending').length;
   const approved = items.filter(it=>it.status==='approved').length;
+  stats.innerHTML = `
+    <div class="stat">Total: <b>${total}</b></div>
+    <div class="stat">Approved: <b style="color:#19d18a">${approved}</b></div>
+    <div class="stat">Pending: <b style="color:#ff5c5c">${pending}</b></div>
+  `;
+  grid.innerHTML = '';
+  items.forEach(it=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('data-id', it.id);
+    card.setAttribute('data-status', it.status||'approved');
+    card.innerHTML = `
+      <span class="status-badge ${it.status==='pending'?'pending':'approved'}">${it.status||'approved'}</span>
+      <img src="${it.url}" alt="">
+      <div class="meta">
+        <div style="font-weight:800">${it.title||'Untitled'}</div>
+        <div class="small">Cat: ${it.cat||'--'}</div>
+        <div class="small">${(it.prompt||'').slice(0,120)}${(it.prompt||'').length>120?'…':''}</div>
+        <div class="row">
+          <button class="btn ok" data-act="approve">Approve</button>
+          <button class="btn bad" data-act="delete">Delete</button>
+        </div>
+      </div>
+    `;
+    const approveBtn = card.querySelector('[data-act="approve"]');
+    const delBtn = card.querySelector('[data-act="delete"]');
+    approveBtn.onclick = ()=> approve(it);
+    delBtn.onclick = ()=> remove(it);
+    grid.appendChild(card);
+  });
+}
+
+async function approve(it){
+  if(!isAdmin){ alert('Admin only'); return; }
+  await updateDoc(doc(collection(db,'images'), it.id), { status:'approved' });
+}
+
+async function remove(it){
+  if(!isAdmin){ alert('Admin only'); return; }
+  if(!confirm('Delete this image and file?')) return;
+  try{
+    // delete Firestore doc
+    await deleteDoc(doc(collection(db,'images'), it.id));
+    // delete Storage file (if path stored)
+    if(it.storagePath){
+      await deleteObject(ref(storage, it.storagePath));
+    }
+  }catch(e){
+    alert('Delete failed: '+e.message);
+  }
+}
+</script>
+</body>
+</html>y>
+</html>t.status==='approved').length;
   const byCat = items.reduce((m,it)=>((m[it.cat]= (m[it.cat]||0)+1),m),{});
   statbar.innerHTML = `
     <div class="stat">Total: <b>${total}</b></div>

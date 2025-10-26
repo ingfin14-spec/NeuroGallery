@@ -34,7 +34,7 @@ nav a, nav button {
   margin-left:16px;cursor:pointer;text-decoration:none;font-size:1rem;
 }
 nav a:hover, nav button:hover {color:#fff;}
-main {max-width:1100px;margin:40px auto;padding:0 20px;}
+main {max-width:1200px;margin:40px auto;padding:0 20px;}
 h2 {font-size:1.6rem;margin-bottom:20px;}
 footer {text-align:center;padding:30px;font-size:0.9rem;opacity:.7;}
 button {cursor:pointer;transition:.3s;}
@@ -50,6 +50,9 @@ button:hover {filter:brightness(1.2);}
 .upload-btn {background:#00e0ff;color:#000;border:none;padding:8px 15px;
   font-weight:600;border-radius:6px;cursor:pointer;margin-bottom:20px;}
 .upload-btn:hover {background:#ffd166;}
+.controls {display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:20px;}
+select,input[type=search]{background:#1a1d22;color:#f4f4f4;border:1px solid var(--border);
+  border-radius:6px;padding:6px 10px;}
 </style>
 </head>
 
@@ -66,6 +69,20 @@ button:hover {filter:brightness(1.2);}
 
 <main>
   <h2>Newest Uploads</h2>
+
+  <div class="controls">
+    <input type="search" id="searchInput" placeholder="Search by title..." />
+    <select id="filterSelect">
+      <option value="all">All Categories</option>
+      <option value="Sci-Fi">Sci-Fi</option>
+      <option value="Fantasy">Fantasy</option>
+      <option value="Cyberpunk">Cyberpunk</option>
+      <option value="Nature">Nature</option>
+      <option value="Abstract">Abstract</option>
+    </select>
+    <button id="refreshBtn">🔄 Refresh</button>
+  </div>
+
   <div id="gallery" class="grid"></div>
 </main>
 
@@ -75,7 +92,7 @@ button:hover {filter:brightness(1.2);}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
@@ -99,6 +116,11 @@ const loginBtn = document.getElementById("loginBtn");
 const uploadBtn = document.getElementById("uploadBtn");
 const gallery = document.getElementById("gallery");
 const userInfo = document.getElementById("userInfo");
+const searchInput = document.getElementById("searchInput");
+const filterSelect = document.getElementById("filterSelect");
+const refreshBtn = document.getElementById("refreshBtn");
+
+let allImages = [];
 
 loginBtn.onclick = async () => {
   if (auth.currentUser) await signOut(auth);
@@ -120,7 +142,7 @@ onAuthStateChanged(auth, (user) => {
     userInfo.textContent = "";
     loginBtn.textContent = "Login with Google";
   }
-});
+};
 
 uploadBtn.onclick = async () => {
   const fileInput = document.createElement("input");
@@ -129,11 +151,13 @@ uploadBtn.onclick = async () => {
   fileInput.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    const category = prompt("Enter category (Sci-Fi / Fantasy / Cyberpunk / Nature / Abstract):","Sci-Fi");
     const storageRef = ref(storage, "uploads/" + file.name);
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
     await addDoc(collection(db, "images"), {
       title: file.name,
+      category: category || "Uncategorized",
       url,
       status: "pending",
       createdAt: serverTimestamp(),
@@ -143,37 +167,37 @@ uploadBtn.onclick = async () => {
   fileInput.click();
 };
 
-async function loadImages() {
-  gallery.innerHTML = "<p>Loading...</p>";
-  const snapshot = await getDocs(collection(db, "images"));
+// 🔹 Load and listen for updates
+const loadImages = async () => {
+  onSnapshot(collection(db, "images"), (snapshot) => {
+    allImages = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderImages();
+  });
+};
+
+// 🔹 Render with filters
+function renderImages() {
+  const q = searchInput.value.toLowerCase();
+  const cat = filterSelect.value;
   gallery.innerHTML = "";
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    if (data.status === "approved") {
+  allImages
+    .filter(img => img.status === "approved")
+    .filter(img => img.title?.toLowerCase().includes(q))
+    .filter(img => cat === "all" || img.category === cat)
+    .sort((a,b)=>b.createdAt?.seconds - a.createdAt?.seconds)
+    .forEach(img => {
       const div = document.createElement("div");
       div.className = "card";
-      div.innerHTML = `<img src="${data.url}" alt="${data.title}">
-                       <p>${data.title || "Untitled"}</p>`;
+      div.innerHTML = `
+        <img src="${img.url}" alt="${img.title}">
+        <p>${img.title || "Untitled"}<br><small>${img.category || ""}</small></p>`;
       gallery.appendChild(div);
-    }
-  });
-}
-loadImages();
-</script>
-</body>
-</html> gallery.innerHTML = "";
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    if (data.status === "approved") {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `<img src="${data.url}" alt="${data.title}">
-                       <p>${data.title || "Untitled"}</p>`;
-      gallery.appendChild(div);
-    }
-  });
+    });
 }
 
+searchInput.oninput = renderImages;
+filterSelect.onchange = renderImages;
+refreshBtn.onclick = renderImages;
 loadImages();
 </script>
 </body>
